@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Reader</title>
+  <style>
+    body {
+      width: 300px;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    #status {
+      font-size: 14px;
+      color: #4b5563;
+    }
+    #preview {
+      margin-top: 12px;
+      padding: 12px;
+      background: #f3f4f6;
+      border-radius: 6px;
+      font-size: 13px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button id="saveArticle">Save Article</button>
+    <div id="status"></div>
+    <div id="preview"></div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html> 
