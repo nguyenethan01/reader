@@ -5,16 +5,83 @@ function updateStatus(message, isError = false) {
   status.style.color = isError ? '#dc2626' : '#4b5563';
 }
 
-// Function to show a preview of the parsed article
-function showPreview(article) {
-  const preview = document.getElementById('preview');
-  if (article) {
-    preview.innerHTML = `
-      <strong>${article.title}</strong><br>
-      <div style="margin-top: 8px">${article.excerpt ? article.excerpt.substring(0, 150) + '...' : ''}</div>
-    `;
-  } else {
-    preview.innerHTML = '';
+// Function to format the date
+function formatDate(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString(undefined, { 
+    month: 'short', 
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric'
+  });
+}
+
+// Function to format URL for display
+function formatUrl(url) {
+  try {
+    const urlObj = new URL(url);
+    // Remove protocol and 'www'
+    let displayUrl = urlObj.hostname.replace(/^www\./, '');
+    // Add path, but truncate if too long
+    const path = urlObj.pathname.replace(/\/$/, '');
+    if (path) {
+      const maxLength = 30;
+      displayUrl += path.length > maxLength ? 
+        path.substring(0, maxLength) + '...' : 
+        path;
+    }
+    return displayUrl;
+  } catch (e) {
+    return url;
+  }
+}
+
+// Function to show recent articles
+async function showRecentArticles() {
+  try {
+    const result = await chrome.storage.local.get('articles');
+    const articles = result.articles || [];
+    const articleList = document.getElementById('articleList');
+    
+    if (articles.length === 0) {
+      articleList.innerHTML = `
+        <div class="empty-state">
+          No articles saved yet. Click "Save Article" to get started!
+        </div>
+      `;
+      return;
+    }
+
+    // Get the last 5 articles
+    const recentArticles = articles.slice(-5).reverse();
+    
+    // Create HTML for each article
+    const articlesHTML = recentArticles.map(article => `
+      <div class="article-item" data-url="${article.url}">
+        <div class="article-title">${article.title}</div>
+        <div class="article-meta">
+          ${article.siteName ? article.siteName + ' • ' : ''}
+          ${formatDate(article.savedAt)}
+        </div>
+        <div class="article-url">
+          ${formatUrl(article.url)}
+        </div>
+      </div>
+    `).join('');
+    
+    articleList.innerHTML = articlesHTML;
+
+    // Add click handlers for each article
+    articleList.querySelectorAll('.article-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const url = item.dataset.url;
+        chrome.tabs.create({ url });
+      });
+    });
+    
+  } catch (error) {
+    console.error('Error loading recent articles:', error);
+    updateStatus('Error loading recent articles', true);
   }
 }
 
@@ -78,7 +145,7 @@ async function parseAndStoreArticle() {
     
     if (saved) {
       updateStatus('Article saved successfully!');
-      showPreview(article);
+      showRecentArticles(); // Refresh the list
     } else {
       throw new Error('Failed to save article');
     }
@@ -89,19 +156,6 @@ async function parseAndStoreArticle() {
   }
 }
 
-// Function to load and display the most recent article
-async function loadMostRecentArticle() {
-  try {
-    const result = await chrome.storage.local.get('articles');
-    const articles = result.articles || [];
-    if (articles.length > 0) {
-      showPreview(articles[articles.length - 1]);
-    }
-  } catch (error) {
-    console.error('Error loading recent article:', error);
-  }
-}
-
 // Initialize the popup
 document.addEventListener('DOMContentLoaded', async () => {
   const saveButton = document.getElementById('saveArticle');
@@ -109,6 +163,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Add click handler for save button
   saveButton.addEventListener('click', parseAndStoreArticle);
   
-  // Show the most recently saved article if any
-  await loadMostRecentArticle();
+  // Show recent articles
+  await showRecentArticles();
 }); 
